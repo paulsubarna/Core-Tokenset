@@ -5,10 +5,12 @@ To install the dependencies, run <pre/>pip install -r requirements.txt</pre>
 Table of Contents
 - [Installation](#installation)
 - Sequential Training with Core Tokensets
+	-	 
 	- [Sequential Image Classification Task](#Sequential-Image-Classification-Task)
 	- [Sequential VQA task](#Sequential-VQA-task)
-        -  [Sequential Image Captioning task](#Sequential-Image-Captioning-task)
-	- [Bibtex](#bibtex)
+ 	- [Sequential Image Captioning task](#Sequential-Image-Captioning-task)
+      
+	
 
 # Installation 
 To install the dependencies, run <pre/>pip install -r requirements.txt</pre> 
