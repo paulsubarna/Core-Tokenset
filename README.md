@@ -41,5 +41,11 @@ Multimodal_tasks/VIT_{'choose core tokenset approach: atman, gradlrp,gradcam,rol
 4. To evaluate the finetuned BLIP model, generate results with: (evaluation needs to be performed on official server)
 <pre>python -m torch.distributed.run --nproc_per_node=8 eval_caption_{'choose core tokenset approach: atman or gradlrp'}.py </pre> 
 
+## Credits 
+Our pytorch implementation of Core Tokens is inspired from the Official implementation of these following repositories
+* https://github.com/salesforce/BLIP
+* https://github.com/hila-chefer/Transformer-Explainability
+* https://github.com/transmuteAI/Data-Efficient-Transformers
+
 
 
