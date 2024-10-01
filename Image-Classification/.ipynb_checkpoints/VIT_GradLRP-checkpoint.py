@@ -56,7 +56,7 @@ torch.set_num_threads(25)
 #config=  CONFIGS['ViT-B_16']
 logger = logging.getLogger(__name__)
 
-cfg= load_config_data('/app/src/Transformer_Explainability/coreset/configs/T-IMGNET/craig/craig_img_vit16.py')
+cfg= load_config_data('./corset/configs/T-IMGNET/craig/craig_img_vit16.py')
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--seed', default=42, type=int)
@@ -202,9 +202,8 @@ def val_step(model,vloader, t, dropout, device):
 
     for i, (img, label) in enumerate(vloader):
         img, label= img.to(device), label.to(device)
-        #if t>0:
-        #    args.dropout= True
-        #img= patch_embed(img, dropout= args.dropout)
+        
+        
         logits = model(img, dropout= dropout)
         accuracy= get_accuracy(logits, label)
         v_acc.append( accuracy)
@@ -220,23 +219,17 @@ def val_step(model,vloader, t, dropout, device):
 def initialize_model(model, modelnew, num_cls,task):
     #if task > 0:
     
-    model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitCT_{task}_{args.mem_ratio}_{args.pix_ratio}.pt'))
-    print('there')
-    
+    model.load_state_dict(torch.load(f'./output/VitCT_{task}_{args.mem_ratio}_{args.pix_ratio}.pt'))
+
     for key,value in model.state_dict().items():
-        #print(key)
+        
         if key == 'head.weight' or key == 'head.bias':
             pass
-            #temp =  model.state_dict()[key]
-            #temp1 = modelnew.state_dict()[key]
-            #for i in range(len(temp)):
-            #    temp1[i] = temp[i]
+            
         else:
             #print(key)
             modelnew.state_dict()[key].copy_(model.state_dict()[key])
-    #print(model1.state_dict())
-    print('there1')
-    #modelnew.to(device)
+
     
     return modelnew
         
@@ -279,8 +272,6 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     _train_transforms = Compose(
             [   Resize(256), 
                 CenterCrop(224),
-                #RandomResizedCrop(size),
-                #RandomHorizontalFlip(),
                 ToTensor(),
                 normalize,
             ]
@@ -297,7 +288,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     temp= dataset.TinyImageNet(images_val[c:b],labels_val[c:b], transform=_train_transforms )
     v_loader = DataLoader(temp, batch_size=1, shuffle= False ,num_workers=1, pin_memory=True)
     config_cor=  CONFIGS['ViT-B_16']
-    cfg= load_config_data('/app/src/Transformer_Explainability/coreset/configs/T-IMGNET/craig/craig_img_vit16.py')
+    cfg= load_config_data('./corset/configs/T-IMGNET/craig/craig_img_vit16.py')
 
     craig_loader= CRAIGDataLoader(model, t_loader, v_loader, cfg, logger,
                                         batch_size=cfg['train_batch_size'],
@@ -347,25 +338,24 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     new_img= memory_buffer_img   
     new_labels= memory_buffer_label
     
-    #with open('/app/src/Transformer_Explainability/percentage_0.5.npy', 'wb') as e:
-    #    np.save(e, np.array(percet))
-    f= open(f'/app/src/Transformer_Explainability/loss_CT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
+
+    f= open(f'./output/loss_GL_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the size of the memory buffer after task {i} is {len(memory_buffer_img)}]')
     f.write('\n'+f'[the size of the New buffer after task {i} is {len(new_img)}]') 
     f.close()
-    #print(len(memory_buffer_img))
+
 
             
     data= dataset.TinyImageNet(new_img,new_labels, transform=_train_transforms, apply_transform= False)
     if args.distributed:
         num_tasks = distribute.get_world_size()
         global_rank = distribute.get_rank()            
-        #samplers = create_sampler(datasets, [True, False], num_tasks, global_rank)    
+           
         sampler = DistributedSampler(data, shuffle=True,num_replicas=num_tasks , rank=global_rank)
     else:
         sampler = None
     dataloader = distribute.create_loader(data, samplers= sampler, batch_size= args.num_batches, num_workers= 2, is_trains= True )
-    #dataloader = DataLoader(data, batch_size=args.num_batches, shuffle= True)
+   
     print('Finished')
     return dataloader
 
@@ -392,13 +382,13 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
 
         iterations = len(loader_1)
         if loader_2 is not None:
-            print("Enter")
+           
             if len(loader_1) > len(loader_2):
-                print("first")
+             
                 iterations = len(loader_1)
 
             else:
-                print("second")
+              
                 iterations = len(loader_2)
 
 
@@ -442,8 +432,7 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
 
 
             if data2 is not None:
-                #print('small loader')
-                #model.train()
+               
                 img2, label2= data2
                 img2, label2= img2.to(device), label2.to(device)
                 loss2, acc2= common_step(modele,img2, label2, dropout= False)
@@ -482,10 +471,6 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
         val_acc_list.append(val_acc)
         del val_acc
 
-        #if e% args.num_epochs == 10:
-        #    torch.save(model.state_dict(),f'/app/src/checkpoints/VitAB_{t}_{args.pix_ratio}_{e}.pt') 
-        #    with open('/app/src/checkpoints/loss_val.npy', 'wb') as f:
-        #        np.save(f, losses)
 
 
 
@@ -512,17 +497,16 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             loader2= create_trainloader(t, model.module, idx_len_train, images, labels, idx_len_val, images_val, labels_val)
             loader1=   train_loader[t]
             model= initialize_model(model.module,modelnew, args.num_class,t-1)
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/Vitp_{t - 1}_{args.train_value}_{args.ID}.pt'))
-            #vit = vit_LRP(pretrained=False, in_drop_rate= 0. ,  num_classes=  args.num_class*2)
+        
             model.to(device)
             #print(args.gpu)
             if args.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
                 model_without_ddp = model.module 
             args.dropout= False
-            #train_loader[t]
+           
             optimizer =torch.optim.Adam(model.parameters(), lr= 0.0001)
-            #optimizer = torch.optim.Adam(vit.parameters(), lr= 0.0001)
+            
             training_batch(model, loader1, optimizer,t, args.dropout,val_loader, device, loader2)
 
         
@@ -531,10 +515,7 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             model= models[t]
             model_without_ddp = model
             model.to(device)
-            #if t  ==0:
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitCT_0_0.5.pt', map_location= torch.device('cuda')))
-            #else:
-            #    model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitABr_{t}_0.8.pt', map_location= torch.device('cuda')))
+        
             print(args.gpu)
             if args.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -588,14 +569,10 @@ def main():
     
     
 if __name__ == '__main__':
-    #device= 'cuda'
-
-    rtpt = RTPT(name_initials='SP', experiment_name='TestingTF', max_iterations=1000)
-    # Start the RTPT tracking
-    rtpt.start()
+   
     percet = []
     timestamp1 = time.time()
-    f= open(f'/app/src/Transformer_Explainability/loss_CT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_CT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+'-------------------------------------------------------'+ '\n' +
             f'[The HYPERPARAMETERS for process is {args.num_task,  args.num_class } and ID-{args.ID}, pix-ratio-{args.pix_ratio}]' + '\n')
     f.close()

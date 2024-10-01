@@ -79,13 +79,6 @@ parser.add_argument('--dist_url', default='env://', help='url used to set up dis
 parser.add_argument('--distributed', default=False, type=bool)
 args = parser.parse_args()
 
-#if torch.cuda.is_available():
-#    device= torch.device('cuda')
-#else:
-#    device= 'cpu'
-
-
-
 
 
 # ### Pretrained ViT
@@ -193,9 +186,6 @@ def val_step(model,val_loader, t, dropout, device):
 
     for i, (img, label) in enumerate(val_loader):
         img, label= img.to(device), label.to(device)
-        #if t>0:
-        #    args.dropout= True
-        #img= patch_embed(img, dropout= args.dropout)
         logits = model(img, dropout= dropout)
         accuracy= get_accuracy(logits, label)
         v_acc.append( accuracy)
@@ -221,7 +211,6 @@ def initialize_model(model, modelnew, num_cls,task):
         else:
             #print(key)
             modelnew.state_dict()[key].copy_(model.state_dict()[key])
-    #print(model1.state_dict())
     print('there1')
     #modelnew.to(device)
     
@@ -243,7 +232,6 @@ def get_attribution(image,model, ratio= 0.1, apply_pixratio= False, transforms= 
     
     if apply_transforms:
         image = transforms(image)
-    #transform_pil= T.ToPILImage
     #
     transformer_attribution = attribution_generator.generate_LRP(image.unsqueeze(0).cuda(), method="transformer_attribution", index=None).detach()
     
@@ -284,7 +272,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     temp= dataset.TinyImageNet(images_val[c:b],labels_val[c:b], transform=_train_transforms )
     v_loader = DataLoader(temp, batch_size=1, shuffle= False ,num_workers=1, pin_memory=True)
     config_cor=  CONFIGS['ViT-B_16']
-    cfg= load_config_data('/app/src/Transformer_Explainability/coreset/configs/T-IMGNET/craig/craig_img_vit16.py')
+    cfg= load_config_data('./corset/configs/T-IMGNET/craig/craig_img_vit16.py')
 
     craig_loader= CRAIGDataLoader(model, t_loader, v_loader, cfg, logger,
                                         batch_size=cfg['train_batch_size'],
@@ -294,7 +282,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     print(len(dataidx)) 
     temporary = set(dataidx)
     print(len(temporary))
-    print('Start pixeling images')
+    print('Start selecting core token')
     a=[]
     l=[]
     
@@ -334,7 +322,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     new_img= memory_buffer_img   
     new_labels= memory_buffer_label
     
-    f= open(f'/app/src/Transformer_Explainability/loss_GC_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_GC_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the size of the memory buffer after task {i} is {len(memory_buffer_img)}]')
     f.write('\n'+f'[the size of the New buffer after task {i} is {len(new_img)}]') 
     f.close()
@@ -375,13 +363,13 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
 
         iterations = len(loader_1)
         if loader_2 is not None:
-            print("Enter")
+            
             if len(loader_1) > len(loader_2):
-                print("first")
+                
                 iterations = len(loader_1)
 
             else:
-                print("second")
+                
                 iterations = len(loader_2)
 
 
@@ -467,10 +455,10 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
 
     print(f"The train accuracy after {e} epochs is: {np.mean(train_acc)}")
 
-    torch.save(modele.module.state_dict(),f'/app/src/Transformer_Explainability/VitGC_{t}_{args.pix_ratio}.pt') 
+    torch.save(modele.module.state_dict(),f'./output/VitGC_{t}_{args.pix_ratio}.pt') 
 
 
-    f= open(f'/app/src/Transformer_Explainability/loss_GC_{args.ID}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_GC_{args.ID}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the train acc for VITP for task {t} is {train_acc}]'+
             f'[the val acc for VITP for task {t} is {val_acc_list}]' + '\n')
     f.close()
@@ -561,7 +549,7 @@ if __name__ == '__main__':
     rtpt.start()
     percet = []
     timestamp1 = time.time()
-    f= open(f'/app/src/Transformer_Explainability/loss_GC_{args.ID}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_GC_{args.ID}_{args.pix_ratio}.txt', "a")
     f.write('\n'+'-------------------------------------------------------'+ '\n' +
             f'[The HYPERPARAMETERS for process is {args.num_task,  args.num_class } and ID-{args.ID}, pix-ratio-{args.pix_ratio}]' + '\n')
     f.close()

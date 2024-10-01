@@ -198,8 +198,8 @@ def val_step(model,val_loader, t, dropout, device):
 def initialize_model(model, modelnew, num_cls,task):
     #if task > 0:
     
-    model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitROLL_{task}_{args.pix_ratio}.pt'))
-    print('there')
+    model.load_state_dict(torch.load(f'./output/VitROLL_{task}_{args.pix_ratio}.pt'))
+    
     
     for key,value in model.state_dict().items():
         if key == 'head.weight' or key == 'head.bias':
@@ -207,7 +207,7 @@ def initialize_model(model, modelnew, num_cls,task):
         else:
             #print(key)
             modelnew.state_dict()[key].copy_(model.state_dict()[key])
-    print('there1')
+   
     
     return modelnew
         
@@ -270,16 +270,16 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     temp= dataset.TinyImageNet(images_val[c:b],labels_val[c:b], transform=_train_transforms )
     v_loader = DataLoader(temp, batch_size=1, shuffle= False ,num_workers=1, pin_memory=True)
     config_cor=  CONFIGS['ViT-B_16']
-    cfg= load_config_data('/app/src/Transformer_Explainability/coreset/configs/T-IMGNET/craig/craig_img_vit16.py')
+    cfg= load_config_data('./corset/configs/T-IMGNET/craig/craig_img_vit16.py')
 
     craig_loader= CRAIGDataLoader(model, t_loader, v_loader, cfg, logger,
                                         batch_size=cfg['train_batch_size'],
                                         shuffle=cfg['shuffle'],
                                         pin_memory=True)
     dataidx,w= craig_loader._resample_subset_indices()
-    print(len(dataidx)) 
+  
     temporary = set(dataidx)
-    print(len(temporary))
+    
     print('Start pixeling images')
     a=[]
     l=[]
@@ -320,7 +320,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     new_img= memory_buffer_img   
     new_labels= memory_buffer_label
     
-    f= open(f'/app/src/Transformer_Explainability/loss_rollout_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_rollout_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the size of the memory buffer after task {i} is {len(memory_buffer_img)}]')
     f.write('\n'+f'[the size of the New buffer after task {i} is {len(new_img)}]') 
     f.close()
@@ -363,11 +363,11 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
         if loader_2 is not None:
             print("Enter")
             if len(loader_1) > len(loader_2):
-                print("first")
+              
                 iterations = len(loader_1)
 
             else:
-                print("second")
+                
                 iterations = len(loader_2)
 
 
@@ -451,19 +451,16 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
         val_acc_list.append(val_acc)
         del val_acc
 
-        #if e% args.num_epochs == 10:
-        #    torch.save(model.state_dict(),f'/app/src/checkpoints/VitAB_{t}_{args.pix_ratio}_{e}.pt') 
-        #    with open('/app/src/checkpoints/loss_val.npy', 'wb') as f:
-        #        np.save(f, losses)
+       
 
 
 
     print(f"The train accuracy after {e} epochs is: {np.mean(train_acc)}")
 
-    torch.save(modele.module.state_dict(),f'/app/src/Transformer_Explainability/VitROLL_{t}_{args.pix_ratio}.pt') 
+    torch.save(modele.module.state_dict(),f'./output/VitROLL_{t}_{args.pix_ratio}.pt') 
 
 
-    f= open(f'/app/src/Transformer_Explainability/loss_ROLL_{args.ID}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_ROLL_{args.ID}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the train acc for VITP for task {t} is {train_acc}]'+
             f'[the val acc for VITP for task {t} is {val_acc_list}]' + '\n')
     f.close()
@@ -480,8 +477,6 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             loader2= create_trainloader(t, model.module, idx_len_train, images, labels)
             loader1=   train_loader[t]
             model= initialize_model(model.module,modelnew, args.num_class,t-1)
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/Vitp_{t - 1}_{args.train_value}_{args.ID}.pt'))
-            #vit = vit_LRP(pretrained=False, in_drop_rate= 0. ,  num_classes=  args.num_class*2)
             model.to(device)
             #print(args.gpu)
             if args.distributed:
@@ -499,10 +494,7 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             model= models[t]
             model_without_ddp = model
             model.to(device)
-            #if t  ==0:
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitAB_0_0.8.pt', map_location= torch.device('cuda')))
-            #else:
-            #    model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitABr_{t}_0.8.pt', map_location= torch.device('cuda')))
+            
             print(args.gpu)
             if args.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -563,15 +555,13 @@ if __name__ == '__main__':
     rtpt.start()
     percet = []
     timestamp1 = time.time()
-    f= open(f'/app/src/Transformer_Explainability/loss_ROLL_{args.ID}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_ROLL_{args.ID}_{args.pix_ratio}.txt', "a")
     f.write('\n'+'-------------------------------------------------------'+ '\n' +
             f'[The HYPERPARAMETERS for process is {args.num_task,  args.num_class } and ID-{args.ID}, pix-ratio-{args.pix_ratio}]' + '\n')
     f.close()
     memory_buffer_img= []
     memory_buffer_label= []
     
-
-    #model= VIT(pretrained= True, num_classes= args.num_class)
     
     main()
     print('Finished')

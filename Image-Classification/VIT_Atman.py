@@ -40,7 +40,6 @@ import distribute
 import dataset
 from patchify import patchify, unpatchify
 from rtpt import RTPT
-#from baselines.ViT.ViT_LRP import vit_base_patch16_224 as Vit
 from vit import vit_base_patch16_224 as Vit
 #from baselines.ViT.ViT_explanation_generator import LRP, Baselines
 from transformers import ViTForImageClassification, AdamW
@@ -58,7 +57,7 @@ torch.set_num_threads(25)
 
 logger = logging.getLogger(__name__)
 
-cfg= load_config_data('/app/src/Transformer_Explainability/coreset/configs/T-IMGNET/craig/craig_img_vit16.py')
+cfg= load_config_data('./corset/configs/T-IMGNET/craig/craig_img_vit16.py')
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--seed', default=42, type=int)
@@ -197,15 +196,13 @@ def val_step(model,vloader, t, dropout, device):
 
     for i, (img, label) in enumerate(vloader):
         img, label= img.to(device), label.to(device)
-        #if t>0:
-        #    args.dropout= True
-        #img= patch_embed(img, dropout= args.dropout)
+
         logits = model(img, dropout= dropout)
         accuracy= get_accuracy(logits, label)
         v_acc.append( accuracy)
     #print('The num batches', i)
     avg_acc= np.mean(v_acc)
-    #val_loss = val_loss/(i+1)
+
 
     return  avg_acc           
 
@@ -216,23 +213,14 @@ def initialize_model(model, modelnew, num_cls,task):
     #if task > 0:
     
     model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitAT_{task}_{args.mem_ratio}_{args.pix_ratio}.pt'))
-    print('there')
     
     for key,value in model.state_dict().items():
         #print(key)
         if key == 'head.weight' or key == 'head.bias':
             pass
-            #temp =  model.state_dict()[key]
-            #temp1 = modelnew.state_dict()[key]
-            #for i in range(len(temp)):
-            #    temp1[i] = temp[i]
         else:
             #print(key)
-            modelnew.state_dict()[key].copy_(model.state_dict()[key])
-    #print(model1.state_dict())
-    print('there1')
-    #modelnew.to(device)
-    
+            modelnew.state_dict()[key].copy_(model.state_dict()[key])    
     return modelnew
         
 
@@ -247,11 +235,10 @@ def added(array):
     resultList= []
     for m in range(len(array)):
 
-       # using nested for loop, traversing the inner lists
-       for n in range (len(array[m])):
+        for n in range (len(array[m])):
 
-          # Add each element to the result list
-          resultList.append(array[m][n])
+            # Add each element to the result list
+            resultList.append(array[m][n])
     return resultList
 
 
@@ -275,9 +262,7 @@ def atman_pertubation(embed, model, lab, num_tokens= 196, conceptual_suppression
             temp= added(tokens['additional_tokens'])
 
             if i not in temp and i not in tokens['suppress_token'] :
-                #print(i, 'continue')
-                #continue
-                #print(i, 'cont')
+
                 similarity_scores = similarities[0][i]  #similarity score of that token plus the conceptual threshold
                 additional_indices_bool = similarity_scores >= conceptual_suppression_threshold  #compute the additional indices of higher similarity
                 additional_indices = additional_indices_bool.nonzero().tolist()
@@ -350,7 +335,7 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     print(len(dataidx)) 
     temporary = set(dataidx)
     print(len(temporary))
-    print('Start pixeling images')
+    print('Start selecting core tokens')
     a=[]
     l=[]
     
@@ -364,8 +349,6 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     device= torch.device(args.device)
     for f in tqdm(range(len(a))):  #idx:
         image= _train_transforms(a[f])
-        #img= image.clone()
-
         image = image.unsqueeze(0)
         lab = torch.tensor(l[f]).unsqueeze(0)
         image, lab = image.to(device), lab.to(device)
@@ -378,11 +361,9 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
         img= img.detach().cpu().numpy()
         #print(tokens.shape)
         sort , r= tokens.detach().cpu().sort(descending=True) # sort it in descending order and collect the idx
-        #print(r)
         patches=  create_tokens(img)                           #patchify the image, reshape the patches into
         zero= torch.ones(16,16,3) * 0.0001  
-        #r= np.arange(196)
-        #random.shuffle(r)    #define the zero tensor             
+          
         skim = r[:int(0.1* len(r))]                            # take a portion of the idx
         for idx, patch in enumerate(patches):
             if idx not in skim:
@@ -400,12 +381,10 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     new_img= memory_buffer_img   
     new_labels= memory_buffer_label
     
-
     f= open(f'/app/src/Transformer_Explainability/loss_AT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+f'[the size of the memory buffer after task {i} is {len(memory_buffer_img)}]')
     f.write('\n'+f'[the size of the New buffer after task {i} is {len(new_img)}]') 
     f.close()
-    #print(len(memory_buffer_img))
 
             
     data= dataset.TinyImageNet(new_img,new_labels, transform=_train_transforms, apply_transform= False)
@@ -417,7 +396,6 @@ def create_trainloader(i, model, idx_len_train, images, labels, idx_len_val, ima
     else:
         sampler = None
     dataloader = distribute.create_loader(data, samplers= sampler, batch_size= args.num_batches, num_workers= 2, is_trains= True )
-    #dataloader = DataLoader(data, batch_size=args.num_batches, shuffle= True)
     print('Finished')
     return dataloader
 
@@ -444,13 +422,13 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
 
         iterations = len(loader_1)
         if loader_2 is not None:
-            print("Enter")
+            
             if len(loader_1) > len(loader_2):
-                print("first")
+               
                 iterations = len(loader_1)
 
             else:
-                print("second")
+               
                 iterations = len(loader_2)
 
 
@@ -514,8 +492,7 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
             if ((i + 1) % args.acc_num == 0) or (i + 1 == iterations):
                 optimizer.step()
                 optimizer.zero_grad()
-            #optimizer.step()
-
+            
 
             l.append(loss.detach().cpu().item())
 
@@ -534,16 +511,12 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
         val_acc_list.append(val_acc)
         del val_acc
 
-        #if e% args.num_epochs == 10:
-        #    torch.save(model.state_dict(),f'/app/src/checkpoints/VitAB_{t}_{args.pix_ratio}_{e}.pt') 
-        #    with open('/app/src/checkpoints/loss_val.npy', 'wb') as f:
-        #        np.save(f, losses)
 
 
 
     print(f"The train accuracy after {e} epochs is: {np.mean(train_acc)}")
 
-    torch.save(modele.module.state_dict(),f'/app/src/Transformer_Explainability/VitAT_{t}_{args.mem_ratio}_{args.pix_ratio}.pt') 
+    torch.save(modele.module.state_dict(),f'path_to_model.pt') 
 
 
     f= open(f'/app/src/Transformer_Explainability/loss_AT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
@@ -552,7 +525,6 @@ def training_batch(modele, loader_1, optimizer,t,dropout, val_loader, device, lo
     f.close()
 
 def train(models, device, train_loader, val_loader, idx_len_train, images, labels, idx_len_val, images_val, labels_val):
-    #optimizer =torch.optim.Adam(model.parameters(), lr= 0.0001)
     
     for t in range(args.num_task):
         
@@ -563,8 +535,7 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             loader2= create_trainloader(t, model.module, idx_len_train, images, labels, idx_len_val, images_val, labels_val)
             loader1=   train_loader[t]
             model= initialize_model(model.module,modelnew, args.num_class,t-1)
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/Vitp_{t - 1}_{args.train_value}_{args.ID}.pt'))
-            #vit = vit_LRP(pretrained=False, in_drop_rate= 0. ,  num_classes=  args.num_class*2)
+
             model.to(device)
             #print(args.gpu)
             if args.distributed:
@@ -582,10 +553,6 @@ def train(models, device, train_loader, val_loader, idx_len_train, images, label
             model= models[t]
             model_without_ddp = model
             model.to(device)
-            #if t  ==0:
-            #model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitAT_0_0.2_0.5.pt', map_location= torch.device('cuda')))
-            #else:
-            #    model.load_state_dict(torch.load(f'/app/src/Transformer_Explainability/VitABr_{t}_0.8.pt', map_location= torch.device('cuda')))
             print(args.gpu)
             if args.distributed:
                 model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -609,8 +576,6 @@ def main():
     
     device = torch.device(args.device)
     
-
-    #"/app/datasets/ILSVRC2012_imagenet"
     # Define training and validation data paths
 
     # fix the seed for reproducibility
@@ -625,7 +590,6 @@ def main():
     VALID_DIR = os.path.join(DATA_DIR, 'val')
     
     for t in range(args.num_task):
-        #models.append(VIT(pretrained=True,in_drop_rate= args.ID, num_classes=  args.num_class * (t+1)))
         if t == 0:
             models.append(Vit(pretrained=True,in_drop_rate= args.ID, num_classes=  args.num_class * (t+1)))
         else:
@@ -641,12 +605,10 @@ def main():
 if __name__ == '__main__':
     #device= 'cuda'
 
-    rtpt = RTPT(name_initials='SP', experiment_name='TestingTF', max_iterations=1000)
-    # Start the RTPT tracking
-    rtpt.start()
+    
     percet = []
     timestamp1 = time.time()
-    f= open(f'/app/src/Transformer_Explainability/loss_AT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
+    f= open(f'./output/loss_AT_{args.mem_ratio}_{args.pix_ratio}.txt', "a")
     f.write('\n'+'-------------------------------------------------------'+ '\n' +
             f'[The HYPERPARAMETERS for process is {args.num_task,  args.num_class } and ID-{args.ID}, pix-ratio-{args.pix_ratio}]' + '\n')
     f.close()
