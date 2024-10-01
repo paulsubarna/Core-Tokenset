@@ -7,7 +7,7 @@ Table of Contents
 - Sequential Training with Core Tokensets
 	- [Sequential Image Classification Task](#Sequential-Image-Classification-Task)
 	- [Sequential VQA task](#Sequential-VQA-task)
--  [Sequential Image Captioning task](#Sequential-Image-Captioning-task)
+        -  [Sequential Image Captioning task](#Sequential-Image-Captioning-task)
 	- [Bibtex](#bibtex)
 
 # Installation 
