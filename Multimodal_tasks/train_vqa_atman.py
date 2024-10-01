@@ -362,8 +362,7 @@ if __name__ == '__main__':
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--distributed', default=True, type=bool)
     args = parser.parse_args()
-    rtpt = RTPT(name_initials='SP', experiment_name='Train VQA', max_iterations=1000)
-    rtpt.start()
+    
     config = yaml.load(open(args.config, 'r'), Loader=yaml.Loader)
 
     args.result_dir = os.path.join(args.output_dir, 'result')

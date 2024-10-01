@@ -1,10 +1,4 @@
-'''
- * Copyright (c) 2022, salesforce.com, inc.
- * All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
- * By Junnan Li
-'''
+
 import argparse
 import os
 import yaml
@@ -293,8 +287,7 @@ if __name__ == '__main__':
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--distributed', default=True, type=bool)
     args = parser.parse_args()
-    rtpt = RTPT(name_initials='SP', experiment_name='Train IMAGE CAPTIONING', max_iterations=1000)
-    rtpt.start()
+    
     config = yaml.load(open(args.config, 'r'), Loader=yaml.Loader)
 
     args.result_dir = os.path.join(args.output_dir, 'result')
