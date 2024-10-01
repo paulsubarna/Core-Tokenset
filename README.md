@@ -20,7 +20,7 @@ To install the dependencies, run <pre/>pip install -r requirements.txt</pre>
 3. Set the memory root in configs
 4. To sequential train ViT with core tokensets, run:
  <pre>python -m torch.distributed.run --nproc_per_node=2\ 
-Multimodal_tasks/VIT_{'choose core tokenset approach: atman, gradlrp,gradcam,rollout'}.py \
+Image-Classification/VIT_{'choose core tokenset approach: atman, gradlrp,gradcam,rollout'}.py \
 --num-epochs 15 --num-task 5 --num-class 20 --pix-ratio 0.1 --mem-ratio 0.1 \
 --ID 0.9 --drop-val False --random False --seed 5 --num-batches 128  </pre>
 
