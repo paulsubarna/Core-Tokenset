@@ -550,9 +550,7 @@ def main():
 if __name__ == '__main__':
     #device= 'cuda'
 
-    rtpt = RTPT(name_initials='SP', experiment_name='TestingTF', max_iterations=1000)
-    # Start the RTPT tracking
-    rtpt.start()
+   
     percet = []
     timestamp1 = time.time()
     f= open(f'./output/loss_ROLL_{args.ID}_{args.pix_ratio}.txt', "a")
