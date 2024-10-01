@@ -1,0 +1,25 @@
+seaborn
+evaluate
+sacrebleu >= 1.4.12
+einops
+notebook
+fairscale
+numpy==1.25.0
+gpustat
+transformers
+datasets
+rtpt
+timm
+torchtyping
+gdown
+jupyterlab
+pycocoevalcap
+patchify
+torchmetrics
+transformers[sentencepiece]
+easydict
+nltk
+rouge_score
+ml_collections
+apricot-select
+mlflow
