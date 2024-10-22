@@ -15,7 +15,7 @@ Table of Contents
 # Installation 
 To install the dependencies, run <pre/>pip install -r requirements.txt</pre> 
 
-### Sequential Image Classification
+### Sequential Image Classification Task
 1. Download ImageNet 1k from the original website and set 'image_root' in configs.
 3. Set the memory root in configs
 4. To sequential train ViT with core tokensets, run:
